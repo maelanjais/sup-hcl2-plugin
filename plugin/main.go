@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclparse"
 	"gopkg.in/yaml.v2"
-	"github.com/maelan/sup-hcl2-plugin/shared"
+	"github.com/maelanjais/sup-hcl2-plugin/shared"
 )
 
 type HCLConfig struct {

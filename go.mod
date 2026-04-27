@@ -1,4 +1,4 @@
-module github.com/maelan/sup-hcl2-plugin
+module github.com/maelanjais/sup-hcl2-plugin
 
 go 1.24
 
