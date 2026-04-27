@@ -1,61 +1,59 @@
-# Sup HCL2 Plugin 🚀
+# Plugin HCL2 pour Sup
 
-Un plugin HashiCorp (`go-plugin`) qui permet au célèbre outil de déploiement [Sup](https://github.com/pressly/sup) d'utiliser la syntaxe **HCL2** au lieu du YAML !
+Ce projet propose un plugin basé sur le framework HashiCorp `go-plugin` permettant à l'outil de déploiement [Sup](https://github.com/pressly/sup) de supporter nativement le format de configuration HCL2.
 
-HCL2 est bien plus lisible, permet de gérer plus facilement les blocs complexes, et est le standard de facto de l'Infrastructure-as-Code.
+Le format HCL2 (HashiCorp Configuration Language) offre une syntaxe plus expressive et structurée que le format YAML traditionnel, facilitant la gestion de configurations d'infrastructure complexes.
 
-## 🏗 Architecture Globale
+## Architecture du système
 
-Voici comment le CLI `sup` interagit avec le plugin pour lire les fichiers `.hcl` :
+Le plugin fonctionne comme un processus indépendant qui communique avec le client Sup via une interface RPC. Cette approche permet de découpler la logique de parsing du coeur de l'application.
 
 ```mermaid
-graph LR
-    A[sup CLI modified] -- "launches plugin binary" --> B(sup-hcl2-parser plugin)
-    B -- "reads .hcl file" --> C[Supfile.hcl]
-    B -- "returns JSON via RPC" --> A
-    A -- "unmarshals into Supfile struct" --> D[sup core logic]
+graph TD
+    subgraph "Processus Host (Sup CLI)"
+        A[CLI Sup Modifié]
+    end
     
-    classDef cli fill:#2d3436,stroke:#74b9ff,stroke-width:2px,color:#fff;
-    classDef plugin fill:#0984e3,stroke:#74b9ff,stroke-width:2px,color:#fff;
-    classDef file fill:#e17055,stroke:#fab1a0,stroke-width:2px,color:#fff;
-    
-    class A,D cli;
-    class B plugin;
-    class C file;
+    subgraph "Processus Plugin"
+        B[sup-hcl2-parser]
+    end
+
+    A -->|1. Initie la connexion RPC| B
+    C[Fichier Supfile.hcl] -->|2. Lecture| B
+    B -->|3. Conversion HCL2 vers YAML| A
+    A -->|4. Unmarshal & Exécution| D[Moteur de déploiement Sup]
 ```
 
-### Comment ça marche sous le capot ?
+### Fonctionnement détaillé
 
-1. `sup` détecte l'extension `.hcl` via le flag `-f`.
-2. Il lance le sous-processus `sup-hcl2-parser` (soit depuis le PATH, soit via le flag `--parser`).
-3. Ils communiquent via le protocole RPC de `hashicorp/go-plugin`.
-4. Le plugin lit et valide le HCL2, puis renvoie le tout converti en YAML standard.
-5. `sup` continue son exécution comme si de rien n'était !
+1. **Détection du format** : Lors de l'utilisation du flag `-f`, le binaire Sup vérifie l'extension du fichier. S'il s'agit d'un fichier `.hcl`, la logique de plugin est activée.
+2. **Communication RPC** : Sup lance le binaire `sup-hcl2-parser` et établit une communication sécurisée via `net/rpc`.
+3. **Parsing et Validation** : Le plugin utilise les bibliothèques officielles de HashiCorp pour valider la syntaxe et décoder la structure HCL2.
+4. **Interopérabilité** : Pour garantir une compatibilité totale sans modifier le moteur interne de Sup, le plugin sérialise la configuration en YAML avant de la renvoyer au processus parent.
 
-## 🚀 Scénario de Démo
+## Installation et Compilation
 
-Vous voulez voir ça en action sur de vraies machines virtuelles ? 
-Consultez le guide pas-à-pas dans [DEMO.md](./DEMO.md) !
+### Prérequis
+- Go 1.24 ou supérieur
+- Un environnement macOS ou Linux
 
-## 🛠 Installation et Compilation
-
+### Procédure de compilation
 ```bash
-# 1. Cloner ce dépôt
+# Récupération du dépôt
 git clone https://github.com/maelanjais/sup-hcl2-plugin.git
 cd sup-hcl2-plugin
 
-# 2. Compiler
+# Compilation du binaire plugin
 make build-plugin
-
-# 3. Tester (Parse un exemple local)
-make test
 ```
 
-## 🧪 Tests Unitaires et CI
+## Utilisation et Démo
 
-Ce projet garantit la non-régression du parsing via des tests unitaires automatisés par **GitHub Actions**.
+Un guide détaillé pour tester le plugin avec des machines virtuelles (utilisant Tart) est disponible dans le fichier [DEMO.md](./DEMO.md).
 
-Pour lancer les tests localement :
+## Tests Unitaires
+
+Le projet inclut une suite de tests pour garantir l'intégrité du parsing :
 ```bash
 go test -v ./plugin/...
 ```
