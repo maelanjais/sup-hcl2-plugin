@@ -1,23 +1,35 @@
 version = "0.5"
 
-# Réseau avec tes 4 VMs Ubuntu
+env {
+  APP_NAME = "demo-app"
+  LOG_PATH = "/var/log/demo.log"
+}
+
 network "tart-cluster" {
   hosts = [
-    "admin@192.168.64.84",
-    "admin@192.168.64.87",
-    "admin@192.168.64.86",
-    "admin@192.168.64.85"
+    "admin@192.168.64.92",
+    "admin@192.168.64.93",
+    "admin@192.168.64.94",
+    "admin@192.168.64.95"
   ]
 }
 
-# Affiche les infos système
-command "status" {
-  desc = "Affiche les infos système et l'uptime de la VM"
-  run  = "uname -a && uptime"
+command "check-system" {
+  desc = "Vérifie les ressources système sur tous les noeuds"
+  run  = "uname -a && uptime && free -h && df -h /"
 }
 
-# Crée un fichier de test
-command "ping-test" {
-  desc = "Crée un petit fichier pour prouver le passage de sup"
-  run  = "echo 'Hello from HCL2 Plugin!' > /tmp/sup-was-here.txt && cat /tmp/sup-was-here.txt"
+command "prepare-node" {
+  desc = "Prépare les répertoires et fichiers de log"
+  run  = "sudo mkdir -p /opt/$${APP_NAME} && sudo touch $${LOG_PATH} && ls -l $${LOG_PATH}"
 }
+
+command "local-audit" {
+  desc  = "Génère un rapport local de début de déploiement"
+  local = "echo \"Début de l'audit à : $(date)\" > deployment.audit"
+}
+
+target "full-setup" {
+  commands = ["local-audit", "check-system", "prepare-node"]
+}
+
